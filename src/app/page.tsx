@@ -1,9 +1,10 @@
 "use client"
 
 import { useAuth } from "@/contexts/auth-context"
+import { FullPageLoader } from "@/components/loading-spinner"
 import { LoginForm } from "@/components/login-form"
 import { Dashboard } from "@/components/dashboard"
-import { FullPageLoader } from "@/components/loading-spinner"
+
 
 export default function HomePage() {
   const { user, isLoading } = useAuth()

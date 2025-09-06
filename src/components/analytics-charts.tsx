@@ -1,11 +1,13 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { TrendingUp, Target, Clock, Zap, Calendar, Award } from "lucide-react"
-import type { Analytics } from "@/lib/types"
+import { Analytics } from "../lib/types"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
+import { Progress } from "./ui/progress"
+import { Badge } from "./ui/badge"
 
 interface AnalyticsChartsProps {
   analytics: Analytics
@@ -209,8 +211,7 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
                     cy="50%"
                     outerRadius={80}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelStyle={{ fill: "#F3F4F6", fontSize: "12px" }}
+                    label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
