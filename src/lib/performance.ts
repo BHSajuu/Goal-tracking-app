@@ -56,34 +56,3 @@ export function throttle<T extends (...args: any[]) => any>(func: T, limit: numb
   }
 }
 
-// Local storage with error handling
-export class SafeLocalStorage {
-  static getItem(key: string): string | null {
-    try {
-      return localStorage.getItem(key)
-    } catch (error) {
-      console.error(`Failed to get item from localStorage: ${key}`, error)
-      return null
-    }
-  }
-
-  static setItem(key: string, value: string): boolean {
-    try {
-      localStorage.setItem(key, value)
-      return true
-    } catch (error) {
-      console.error(`Failed to set item in localStorage: ${key}`, error)
-      return false
-    }
-  }
-
-  static removeItem(key: string): boolean {
-    try {
-      localStorage.removeItem(key)
-      return true
-    } catch (error) {
-      console.error(`Failed to remove item from localStorage: ${key}`, error)
-      return false
-    }
-  }
-}

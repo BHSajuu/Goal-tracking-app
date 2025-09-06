@@ -1,101 +1,105 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useCallback } from "react"
 import type { Task, TaskCompletion } from "@/lib/types"
-import { LocalStorage } from "@/lib/storage"
 import { useAuth } from "@/contexts/auth-context"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "../../convex/_generated/api"
+import { Id } from "../../convex/_generated/dataModel"
 
 export function useTasks() {
   const { user } = useAuth()
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [completions, setCompletions] = useState<TaskCompletion[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  
+  // Use Convex queries to get data
+  const tasks = useQuery(api.tasks.getTasksByUser, user ? { userId: user.id as Id<"users"> } : "skip") || []
+  const completions = useQuery(api.taskCompletions.getCompletionsByUser, user ? { userId: user.id as Id<"users"> } : "skip") || []
+  
+  // Use Convex mutations
+  const createTaskMutation = useMutation(api.tasks.createTask)
+  const updateTaskMutation = useMutation(api.tasks.updateTask)
+  const deleteTaskMutation = useMutation(api.tasks.deleteTask)
+  const createCompletionMutation = useMutation(api.taskCompletions.createTaskCompletion)
+  const updateCompletionMutation = useMutation(api.taskCompletions.updateTaskCompletion)
+  const deleteCompletionMutation = useMutation(api.taskCompletions.deleteTaskCompletion)
 
-  // Load tasks and completions from storage
-  useEffect(() => {
-    if (!user) {
-      setTasks([])
-      setCompletions([])
-      setIsLoading(false)
-      return
-    }
-
-    const allTasks = LocalStorage.getTasks()
-    const userTasks = allTasks.filter((task) => task.userId === user.id)
-    setTasks(userTasks)
-
-    const allCompletions = LocalStorage.getCompletions()
-    const userCompletions = allCompletions.filter((completion) => completion.userId === user.id)
-    setCompletions(userCompletions)
-
-    setIsLoading(false)
-  }, [user])
+  const isLoading = tasks === undefined || completions === undefined
 
   const createTask = useCallback(
-    (taskData: Omit<Task, "id" | "userId" | "createdAt" | "updatedAt">) => {
+    async (taskData: Omit<Task, "id" | "userId" | "createdAt" | "updatedAt">) => {
       if (!user) return
 
-      const newTask: Task = {
-        ...taskData,
-        id: crypto.randomUUID(),
-        userId: user.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      const taskId = await createTaskMutation({
+        goalSetId: taskData.goalSetId as Id<"goalSets">,
+        userId: user.id as Id<"users">,
+        title: taskData.title,
+        description: taskData.description,
+        isCompleted: taskData.isCompleted,
+        priority: taskData.priority,
+        estimatedDuration: taskData.estimatedDuration,
+        actualDuration: taskData.actualDuration,
+        scheduledDate: taskData.scheduledDate?.getTime(),
+        completedAt: taskData.completedAt?.getTime(),
+        recurrence: taskData.recurrence ? {
+          ...taskData.recurrence,
+          endDate: taskData.recurrence.endDate?.getTime(),
+        } : undefined,
+        tags: taskData.tags,
+      })
 
-      const allTasks = LocalStorage.getTasks()
-      const updatedTasks = [...allTasks, newTask]
-      LocalStorage.setTasks(updatedTasks)
-
-      setTasks((prev) => [...prev, newTask])
-      return newTask
+      return taskId
     },
-    [user],
+    [user, createTaskMutation],
   )
 
-  const updateTask = useCallback((id: string, updates: Partial<Task>) => {
-    const allTasks = LocalStorage.getTasks()
-    const updatedTasks = allTasks.map((task) =>
-      task.id === id ? { ...task, ...updates, updatedAt: new Date() } : task,
-    )
-    LocalStorage.setTasks(updatedTasks)
+  const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
+    
+    const convexUpdates: any = {}
+    
+    if (updates.title !== undefined) convexUpdates.title = updates.title
+    if (updates.description !== undefined) convexUpdates.description = updates.description
+    if (updates.isCompleted !== undefined) convexUpdates.isCompleted = updates.isCompleted
+    if (updates.priority !== undefined) convexUpdates.priority = updates.priority
+    if (updates.estimatedDuration !== undefined) convexUpdates.estimatedDuration = updates.estimatedDuration
+    if (updates.actualDuration !== undefined) convexUpdates.actualDuration = updates.actualDuration
+    if (updates.scheduledDate !== undefined) convexUpdates.scheduledDate = updates.scheduledDate?.getTime()
+    if (updates.completedAt !== undefined) convexUpdates.completedAt = updates.completedAt?.getTime()
+    if (updates.recurrence !== undefined) {
+      convexUpdates.recurrence = updates.recurrence ? {
+        ...updates.recurrence,
+        endDate: updates.recurrence.endDate?.getTime(),
+      } : undefined
+    }
+    if (updates.tags !== undefined) convexUpdates.tags = updates.tags
 
-    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...updates, updatedAt: new Date() } : task)))
-  }, [])
+    await updateTaskMutation({
+      id: id as Id<"tasks">,
+      updates: convexUpdates,
+    })
+  }, [updateTaskMutation])
 
-  const deleteTask = useCallback((id: string) => {
-    const allTasks = LocalStorage.getTasks()
-    const updatedTasks = allTasks.filter((task) => task.id !== id)
-    LocalStorage.setTasks(updatedTasks)
-
-    setTasks((prev) => prev.filter((task) => task.id !== id))
-  }, [])
+  const deleteTask = useCallback(async (id: string) => {
+    await deleteTaskMutation({ id: id as Id<"tasks"> })
+  }, [deleteTaskMutation])
 
   const completeTask = useCallback(
-    (taskId: string, duration?: number, notes?: string, mood?: 1 | 2 | 3 | 4 | 5) => {
+    async (taskId: string, duration?: number, notes?: string, mood?: 1 | 2 | 3 | 4 | 5) => {
       if (!user) return
 
-      const task = tasks.find((t) => t.id === taskId)
+      const task = tasks.find((t) => t._id === taskId)
       if (!task) return
 
       // Create completion record
-      const completion: TaskCompletion = {
-        id: crypto.randomUUID(),
-        taskId,
-        userId: user.id,
-        completedAt: new Date(),
+      await createCompletionMutation({
+        taskId: taskId as Id<"tasks">,
+        userId: user.id as Id<"users">,
+        completedAt: Date.now(),
         duration,
         notes,
         mood,
-      }
-
-      const allCompletions = LocalStorage.getCompletions()
-      const updatedCompletions = [...allCompletions, completion]
-      LocalStorage.setCompletions(updatedCompletions)
-      setCompletions((prev) => [...prev, completion])
+      })
 
       // Update task
-      updateTask(taskId, {
+      await updateTask(taskId, {
         isCompleted: true,
         completedAt: new Date(),
         actualDuration: duration,
@@ -106,29 +110,30 @@ export function useTasks() {
         createRecurringTask(task)
       }
     },
-    [user, tasks, updateTask],
+    [user, tasks, updateTask, createCompletionMutation],
   )
 
   const uncompleteTask = useCallback(
-    (taskId: string) => {
+    async (taskId: string) => {
+      
       // Remove completion records
-      const allCompletions = LocalStorage.getCompletions()
-      const updatedCompletions = allCompletions.filter((c) => c.taskId !== taskId)
-      LocalStorage.setCompletions(updatedCompletions)
-      setCompletions((prev) => prev.filter((c) => c.taskId !== taskId))
+      const taskCompletions = completions.filter((c) => c.taskId === taskId)
+      for (const completion of taskCompletions) {
+        await deleteCompletionMutation({ id: completion._id as Id<"taskCompletions"> })
+      }
 
       // Update task
-      updateTask(taskId, {
+      await updateTask(taskId, {
         isCompleted: false,
         completedAt: undefined,
         actualDuration: undefined,
       })
     },
-    [updateTask],
+    [updateTask, completions, deleteCompletionMutation],
   )
 
   const createRecurringTask = useCallback(
-    (originalTask: Task) => {
+    async (originalTask: any) => {
       if (!originalTask.recurrence) return
 
       const { type, interval } = originalTask.recurrence
@@ -147,19 +152,20 @@ export function useTasks() {
       }
 
       // Don't create if past end date
-      if (originalTask.recurrence.endDate && nextDate > originalTask.recurrence.endDate) {
+      if (originalTask.recurrence.endDate && nextDate > new Date(originalTask.recurrence.endDate)) {
         return
       }
 
       const newTask: Omit<Task, "id" | "userId" | "createdAt" | "updatedAt"> = {
         ...originalTask,
+        goalSetId: originalTask.goalSetId,
         isCompleted: false,
         completedAt: undefined,
         actualDuration: undefined,
         scheduledDate: nextDate,
       }
 
-      createTask(newTask)
+      await createTask(newTask)
     },
     [createTask],
   )

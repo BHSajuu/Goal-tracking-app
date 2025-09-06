@@ -63,7 +63,7 @@ export function useSmartSuggestions() {
     // Goal momentum analysis
     const activeGoalSets = goalSets.filter((gs) => gs.isActive)
     const goalMomentum = activeGoalSets.map((goalSet) => {
-      const goalTasks = tasks.filter((t) => t.goalSetId === goalSet.id)
+      const goalTasks = tasks.filter((t) => t.goalSetId === goalSet._id)
       const recentCompletions = goalTasks.filter((t) => {
         if (!t.completedAt) return false
         const daysDiff = (Date.now() - new Date(t.completedAt).getTime()) / (1000 * 60 * 60 * 24)
@@ -160,7 +160,7 @@ export function useSmartSuggestions() {
 
     // Goal completion celebration
     const nearCompleteGoals = goalSets.filter((gs) => {
-      const goalTasks = tasks.filter((t) => t.goalSetId === gs.id)
+      const goalTasks = tasks.filter((t) => t.goalSetId === gs._id)
       const completedGoalTasks = goalTasks.filter((t) => t.isCompleted)
       const completionRate = goalTasks.length > 0 ? completedGoalTasks.length / goalTasks.length : 0
       return gs.isActive && completionRate >= 0.8 && completionRate < 1
@@ -179,7 +179,7 @@ export function useSmartSuggestions() {
 
     // Empty goal sets with actionable advice
     const emptyGoalSets = goalSets.filter((gs) => {
-      const goalSetTasks = tasks.filter((t) => t.goalSetId === gs.id)
+      const goalSetTasks = tasks.filter((t) => t.goalSetId === gs._id)
       return gs.isActive && goalSetTasks.length === 0
     })
     if (emptyGoalSets.length > 0) {
@@ -212,7 +212,7 @@ export function useSmartSuggestions() {
 
         // Smart scheduling based on task priority and estimated duration
         const sortedTasks = unscheduledTasks.sort((a, b) => {
-          const priorityOrder = { high: 3, medium: 2, low: 1 }
+          const priorityOrder: Record<string, number> = { high: 3, medium: 2, low: 1 }
           const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority]
           if (priorityDiff !== 0) return priorityDiff
 
@@ -243,9 +243,8 @@ export function useSmartSuggestions() {
 
           console.log(`[v0] Smart scheduling "${task.title}" for ${scheduleTime.toLocaleString()}`)
 
-          updateTask(task.id, {
-            scheduledDate: scheduleTime.toISOString(),
-            scheduledTime: `${scheduleTime.getHours().toString().padStart(2, "0")}:${scheduleTime.getMinutes().toString().padStart(2, "0")}`,
+          updateTask(task._id, {
+            scheduledDate: scheduleTime,
           })
 
           dailyWorkload += taskHours

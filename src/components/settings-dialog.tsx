@@ -26,6 +26,28 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { user, updateUser, logout } = useAuth()
   const { tasks } = useTasks()
   const { goalSets } = useGoalSets()
+  
+  // Transform Convex data to match expected types
+  const transformedTasks = tasks.map(task => ({
+    ...task,
+    id: task._id,
+    createdAt: new Date(task._creationTime),
+    updatedAt: new Date(task._creationTime),
+    scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined,
+    completedAt: task.completedAt ? new Date(task.completedAt) : undefined,
+    recurrence: task.recurrence ? {
+      ...task.recurrence,
+      endDate: task.recurrence.endDate ? new Date(task.recurrence.endDate) : undefined,
+    } : undefined,
+  }))
+  
+  const transformedGoalSets = goalSets.map(gs => ({
+    ...gs,
+    id: gs._id,
+    createdAt: new Date(gs._creationTime),
+    updatedAt: new Date(gs._creationTime),
+    targetCompletionDate: gs.targetCompletionDate ? new Date(gs.targetCompletionDate) : undefined,
+  }))
   const { toast } = useToast()
   const [isImporting, setIsImporting] = useState(false)
 
@@ -55,10 +77,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     })
   }
 
-  const handleExportJSON = () => {
+  const handleExportJSON = async () => {
     if (!user) return
 
-    const exportData = DataExporter.exportData(user)
+    const exportData = await DataExporter.exportData(user)
     DataExporter.downloadJSON(exportData)
 
     toast({
@@ -70,7 +92,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const handleExportCSV = () => {
     if (!user) return
 
-    DataExporter.downloadCSV(tasks, goalSets)
+    DataExporter.downloadCSV(transformedTasks, transformedGoalSets)
 
     toast({
       title: "Tasks exported",
@@ -279,15 +301,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{goalSets.length}</div>
+                  <div className="text-2xl font-bold">{transformedGoalSets.length}</div>
                   <div className="text-sm text-muted-foreground">Goal Sets</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{tasks.length}</div>
+                  <div className="text-2xl font-bold">{transformedTasks.length}</div>
                   <div className="text-sm text-muted-foreground">Tasks</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{tasks.filter((t) => t.isCompleted).length}</div>
+                  <div className="text-2xl font-bold">{transformedTasks.filter((t) => t.isCompleted).length}</div>
                   <div className="text-sm text-muted-foreground">Completed</div>
                 </div>
                 <div className="text-center">

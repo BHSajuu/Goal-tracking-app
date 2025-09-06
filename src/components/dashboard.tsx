@@ -39,10 +39,32 @@ export function Dashboard() {
   const [selectedGoalSetId, setSelectedGoalSetId] = useState<string>("")
   const [showSettings, setShowSettings] = useState(false)
 
-  const activeGoalSets = goalSets.filter((gs) => gs.isActive)
+  // Transform Convex data to match expected types
+  const transformedGoalSets = goalSets.map(gs => ({
+    ...gs,
+    id: gs._id,
+    createdAt: new Date(gs._creationTime),
+    updatedAt: new Date(gs._creationTime),
+    targetCompletionDate: gs.targetCompletionDate ? new Date(gs.targetCompletionDate) : undefined,
+  }))
+  
+  const transformedTasks = tasks.map(task => ({
+    ...task,
+    id: task._id,
+    createdAt: new Date(task._creationTime),
+    updatedAt: new Date(task._creationTime),
+    scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined,
+    completedAt: task.completedAt ? new Date(task.completedAt) : undefined,
+    recurrence: task.recurrence ? {
+      ...task.recurrence,
+      endDate: task.recurrence.endDate ? new Date(task.recurrence.endDate) : undefined,
+    } : undefined,
+  }))
+
+  const activeGoalSets = transformedGoalSets.filter((gs) => gs.isActive)
   const todaysTasks = getTodaysTasks()
-  const completedTasks = tasks.filter((t) => t.isCompleted)
-  const totalTasks = tasks.length
+  const completedTasks = transformedTasks.filter((t) => t.isCompleted)
+  const totalTasks = transformedTasks.length
   const completionRate = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0
 
   const handleCreateGoalSet = (goalSetData: Omit<GoalSet, "id" | "userId" | "createdAt" | "updatedAt">) => {
@@ -97,7 +119,7 @@ export function Dashboard() {
   }
 
   const getGoalSetTaskStats = (goalSetId: string) => {
-    const goalSetTasks = getTasksByGoalSet(goalSetId)
+    const goalSetTasks = transformedTasks.filter((t) => t.goalSetId === goalSetId)
     const completedCount = goalSetTasks.filter((t) => t.isCompleted).length
     return { total: goalSetTasks.length, completed: completedCount }
   }
@@ -272,11 +294,12 @@ export function Dashboard() {
                   <h3 className="text-lg font-semibold">Today's Tasks</h3>
                   <div className="grid gap-3">
                     {todaysTasks.map((task) => {
-                      const goalSet = goalSets.find((gs) => gs.id === task.goalSetId)
+                      const transformedTask = transformedTasks.find(t => t._id === task._id)
+                      const goalSet = transformedGoalSets.find((gs) => gs.id === task.goalSetId)
                       return (
                         <TaskCard
-                          key={task.id}
-                          task={task}
+                          key={task._id}
+                          task={transformedTask!}
                           goalSet={goalSet}
                           onEdit={handleEditTaskClick}
                           onDelete={deleteTask}
@@ -294,7 +317,7 @@ export function Dashboard() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Your Goal Sets</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {goalSets.slice(0, 6).map((goalSet) => {
+                    {transformedGoalSets.slice(0, 6).map((goalSet) => {
                       const stats = getGoalSetTaskStats(goalSet.id)
                       return (
                         <GoalSetCard
@@ -346,10 +369,10 @@ export function Dashboard() {
             </TabsContent>
 
             <TabsContent value="tasks" className="space-y-4">
-              {tasks.length > 0 ? (
+              {transformedTasks.length > 0 ? (
                 <div className="grid gap-3">
-                  {tasks.map((task) => {
-                    const goalSet = goalSets.find((gs) => gs.id === task.goalSetId)
+                  {transformedTasks.map((task) => {
+                    const goalSet = transformedGoalSets.find((gs) => gs.id === task.goalSetId)
                     return (
                       <TaskCard
                         key={task.id}
@@ -380,9 +403,9 @@ export function Dashboard() {
             </TabsContent>
 
             <TabsContent value="goals" className="space-y-4">
-              {goalSets.length > 0 ? (
+              {transformedGoalSets.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {goalSets.map((goalSet) => {
+                  {transformedGoalSets.map((goalSet) => {
                     const stats = getGoalSetTaskStats(goalSet.id)
                     return (
                       <GoalSetCard

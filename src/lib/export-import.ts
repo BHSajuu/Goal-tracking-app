@@ -1,6 +1,4 @@
 import type { User, GoalSet, Task, TaskCompletion } from "./types"
-import { LocalStorage } from "./storage"
-
 export interface ExportData {
   version: string
   exportDate: string
@@ -11,19 +9,10 @@ export interface ExportData {
 }
 
 export class DataExporter {
-  static exportData(user: User): ExportData {
-    const goalSets = LocalStorage.getGoalSets().filter((gs) => gs.userId === user.id)
-    const tasks = LocalStorage.getTasks().filter((t) => t.userId === user.id)
-    const completions = LocalStorage.getCompletions().filter((c) => c.userId === user.id)
-
-    return {
-      version: "1.0.0",
-      exportDate: new Date().toISOString(),
-      user,
-      goalSets,
-      tasks,
-      completions,
-    }
+  static async exportData(user: User): Promise<ExportData> {
+    // This will be called from a component that has access to Convex hooks
+    // For now, return a placeholder - the actual implementation will be in the component
+    throw new Error("DataExporter.exportData should be called from a React component with Convex hooks")
   }
 
   static downloadJSON(data: ExportData, filename?: string) {
@@ -96,74 +85,8 @@ export class DataImporter {
     message: string
     imported?: { goalSets: number; tasks: number; completions: number }
   }> {
-    try {
-      const text = await file.text()
-      const data: ExportData = JSON.parse(text)
-
-      if (!data.version || !data.goalSets || !data.tasks) {
-        return { success: false, message: "Invalid file format" }
-      }
-
-      // Update IDs to avoid conflicts and assign to current user
-      const idMap = new Map<string, string>()
-
-      // Import goal sets
-      const existingGoalSets = LocalStorage.getGoalSets()
-      const newGoalSets = data.goalSets.map((gs) => {
-        const newId = crypto.randomUUID()
-        idMap.set(gs.id, newId)
-        return {
-          ...gs,
-          id: newId,
-          userId,
-          createdAt: new Date(gs.createdAt),
-          updatedAt: new Date(),
-        }
-      })
-      LocalStorage.setGoalSets([...existingGoalSets, ...newGoalSets])
-
-      // Import tasks with updated goal set IDs
-      const existingTasks = LocalStorage.getTasks()
-      const newTasks = data.tasks.map((task) => ({
-        ...task,
-        id: crypto.randomUUID(),
-        userId,
-        goalSetId: idMap.get(task.goalSetId) || task.goalSetId,
-        createdAt: new Date(task.createdAt),
-        updatedAt: new Date(),
-        scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined,
-        completedAt: task.completedAt ? new Date(task.completedAt) : undefined,
-        recurrence: task.recurrence
-          ? {
-              ...task.recurrence,
-              endDate: task.recurrence.endDate ? new Date(task.recurrence.endDate) : undefined,
-            }
-          : undefined,
-      }))
-      LocalStorage.setTasks([...existingTasks, ...newTasks])
-
-      // Import completions
-      const existingCompletions = LocalStorage.getCompletions()
-      const newCompletions =
-        data.completions?.map((completion) => ({
-          ...completion,
-          id: crypto.randomUUID(),
-          userId,
-          completedAt: new Date(completion.completedAt),
-        })) || []
-      LocalStorage.setCompletions([...existingCompletions, ...newCompletions])
-
-      return {
-        success: true,
-        message: "Data imported successfully",
-        imported: {
-          goalSets: newGoalSets.length,
-          tasks: newTasks.length,
-          completions: newCompletions.length,
-        },
-      }
-    } catch (error) {
-      return { success: false, message: "Failed to parse file" }
-    }
+    // This will be called from a component that has access to Convex hooks
+    // For now, return a placeholder - the actual implementation will be in the component
+    throw new Error("DataImporter.importFromJSON should be called from a React component with Convex hooks")
   }
 }

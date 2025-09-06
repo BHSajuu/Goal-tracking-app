@@ -4,14 +4,34 @@ import { useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useTasks } from "@/hooks/use-tasks"
 import { useGoalSets } from "@/hooks/use-goal-sets"
+import { useQuery } from "convex/react"
+import { api } from "../../convex/_generated/api"
+import { Id } from "../../convex/_generated/dataModel"
 import type { Analytics } from "@/lib/types"
 
 export function useAnalytics() {
   const { user } = useAuth()
   const { tasks, completions } = useTasks()
   const { goalSets } = useGoalSets()
+  
+  // Use Convex analytics query
+  const convexAnalytics = useQuery(api.analytics.getUserAnalytics, user ? { userId: user.id as Id<"users"> } : "skip")
 
   const analytics = useMemo((): Analytics => {
+    // Use Convex analytics if available, otherwise fall back to local calculation
+    if (convexAnalytics) {
+      return {
+        completionRate: convexAnalytics.completionRate,
+        streakDays: convexAnalytics.streakDays,
+        totalTasksCompleted: convexAnalytics.totalTasksCompleted,
+        averageCompletionTime: convexAnalytics.averageCompletionTime,
+        productivityScore: convexAnalytics.productivityScore,
+        weeklyProgress: convexAnalytics.weeklyProgress,
+        goalSetProgress: convexAnalytics.goalSetProgress,
+      }
+    }
+
+    // Fallback to local calculation
     if (!user || tasks.length === 0) {
       return {
         completionRate: 0,
@@ -24,17 +44,17 @@ export function useAnalytics() {
       }
     }
 
-    const completedTasks = tasks.filter((t) => t.isCompleted)
+    const completedTasks = tasks.filter((t: any) => t.isCompleted)
     const completionRate = Math.round((completedTasks.length / tasks.length) * 100)
 
     // Calculate streak days
     const streakDays = calculateStreakDays(completions)
 
     // Calculate average completion time
-    const tasksWithDuration = completions.filter((c) => c.duration)
+    const tasksWithDuration = completions.filter((c: any) => c.duration)
     const averageCompletionTime =
       tasksWithDuration.length > 0
-        ? Math.round(tasksWithDuration.reduce((sum, c) => sum + (c.duration || 0), 0) / tasksWithDuration.length)
+        ? Math.round(tasksWithDuration.reduce((sum: number, c: any) => sum + (c.duration || 0), 0) / tasksWithDuration.length)
         : 0
 
     // Calculate productivity score (0-100)
@@ -44,12 +64,12 @@ export function useAnalytics() {
     const weeklyProgress = generateWeeklyProgress(tasks, completions)
 
     // Generate goal set progress
-    const goalSetProgress = goalSets.map((goalSet) => {
-      const goalSetTasks = tasks.filter((t) => t.goalSetId === goalSet.id)
-      const completedGoalSetTasks = goalSetTasks.filter((t) => t.isCompleted)
+    const goalSetProgress = goalSets.map((goalSet: any) => {
+      const goalSetTasks = tasks.filter((t: any) => t.goalSetId === goalSet._id)
+      const completedGoalSetTasks = goalSetTasks.filter((t: any) => t.isCompleted)
 
       return {
-        goalSetId: goalSet.id,
+        goalSetId: goalSet._id,
         name: goalSet.name,
         completionRate:
           goalSetTasks.length > 0 ? Math.round((completedGoalSetTasks.length / goalSetTasks.length) * 100) : 0,
@@ -67,7 +87,7 @@ export function useAnalytics() {
       weeklyProgress,
       goalSetProgress,
     }
-  }, [user, tasks, completions, goalSets])
+  }, [user, tasks, completions, goalSets, convexAnalytics])
 
   return analytics
 }

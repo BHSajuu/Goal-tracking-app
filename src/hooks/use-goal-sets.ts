@@ -1,70 +1,70 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useCallback } from "react"
 import type { GoalSet } from "@/lib/types"
-import { LocalStorage } from "@/lib/storage"
 import { useAuth } from "@/contexts/auth-context"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "../../convex/_generated/api"
+import { Id } from "../../convex/_generated/dataModel"
 
 export function useGoalSets() {
   const { user } = useAuth()
-  const [goalSets, setGoalSets] = useState<GoalSet[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  
+  // Use Convex queries to get data
+  const goalSets = useQuery(api.goalSets.getGoalSetsByUser, user ? { userId: user.id as Id<"users"> } : "skip") || []
+  
+  // Use Convex mutations
+  const createGoalSetMutation = useMutation(api.goalSets.createGoalSet)
+  const updateGoalSetMutation = useMutation(api.goalSets.updateGoalSet)
+  const deleteGoalSetMutation = useMutation(api.goalSets.deleteGoalSet)
 
-  // Load goal sets from storage
-  useEffect(() => {
-    if (!user) {
-      setGoalSets([])
-      setIsLoading(false)
-      return
-    }
-
-    const allGoalSets = LocalStorage.getGoalSets()
-    const userGoalSets = allGoalSets.filter((gs) => gs.userId === user.id)
-    setGoalSets(userGoalSets)
-    setIsLoading(false)
-  }, [user])
+  const isLoading = goalSets === undefined
 
   const createGoalSet = useCallback(
-    (goalSetData: Omit<GoalSet, "id" | "userId" | "createdAt" | "updatedAt">) => {
+    async (goalSetData: Omit<GoalSet, "id" | "userId" | "createdAt" | "updatedAt">) => {
       if (!user) return
 
-      const newGoalSet: GoalSet = {
-        ...goalSetData,
-        id: crypto.randomUUID(),
-        userId: user.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      const goalSetId = await createGoalSetMutation({
+        userId: user.id as Id<"users">,
+        name: goalSetData.name,
+        description: goalSetData.description,
+        color: goalSetData.color,
+        icon: goalSetData.icon,
+        isActive: goalSetData.isActive,
+        targetCompletionDate: goalSetData.targetCompletionDate?.getTime(),
+        priority: goalSetData.priority,
+      })
 
-      const allGoalSets = LocalStorage.getGoalSets()
-      const updatedGoalSets = [...allGoalSets, newGoalSet]
-      LocalStorage.setGoalSets(updatedGoalSets)
-
-      setGoalSets((prev) => [...prev, newGoalSet])
-      return newGoalSet
+      return goalSetId
     },
-    [user],
+    [user, createGoalSetMutation],
   )
 
-  const updateGoalSet = useCallback((id: string, updates: Partial<GoalSet>) => {
-    const allGoalSets = LocalStorage.getGoalSets()
-    const updatedGoalSets = allGoalSets.map((gs) => (gs.id === id ? { ...gs, ...updates, updatedAt: new Date() } : gs))
-    LocalStorage.setGoalSets(updatedGoalSets)
+  const updateGoalSet = useCallback(async (id: string, updates: Partial<GoalSet>) => {
+    
+    const convexUpdates: any = {}
+    
+    if (updates.name !== undefined) convexUpdates.name = updates.name
+    if (updates.description !== undefined) convexUpdates.description = updates.description
+    if (updates.color !== undefined) convexUpdates.color = updates.color
+    if (updates.icon !== undefined) convexUpdates.icon = updates.icon
+    if (updates.isActive !== undefined) convexUpdates.isActive = updates.isActive
+    if (updates.targetCompletionDate !== undefined) convexUpdates.targetCompletionDate = updates.targetCompletionDate?.getTime()
+    if (updates.priority !== undefined) convexUpdates.priority = updates.priority
 
-    setGoalSets((prev) => prev.map((gs) => (gs.id === id ? { ...gs, ...updates, updatedAt: new Date() } : gs)))
-  }, [])
+    await updateGoalSetMutation({
+      id: id as Id<"goalSets">,
+      updates: convexUpdates,
+    })
+  }, [updateGoalSetMutation])
 
-  const deleteGoalSet = useCallback((id: string) => {
-    const allGoalSets = LocalStorage.getGoalSets()
-    const updatedGoalSets = allGoalSets.filter((gs) => gs.id !== id)
-    LocalStorage.setGoalSets(updatedGoalSets)
-
-    setGoalSets((prev) => prev.filter((gs) => gs.id !== id))
-  }, [])
+  const deleteGoalSet = useCallback(async (id: string) => {
+    await deleteGoalSetMutation({ id: id as Id<"goalSets"> })
+  }, [deleteGoalSetMutation])
 
   const toggleGoalSetActive = useCallback(
     (id: string) => {
-      updateGoalSet(id, { isActive: !goalSets.find((gs) => gs.id === id)?.isActive })
+      updateGoalSet(id, { isActive: !goalSets.find((gs) => gs._id === id)?.isActive })
     },
     [goalSets, updateGoalSet],
   )
