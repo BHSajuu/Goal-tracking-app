@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useTasks } from "@/hooks/use-tasks"
@@ -10,7 +8,6 @@ import { DataExporter, DataImporter } from "@/lib/export-import"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -49,7 +46,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     targetCompletionDate: gs.targetCompletionDate ? new Date(gs.targetCompletionDate) : undefined,
   }))
   const { toast } = useToast()
-  const [isImporting, setIsImporting] = useState(false)
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -77,10 +73,23 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     })
   }
 
-  const handleExportJSON = async () => {
+  const handleExportJSON = () => {
     if (!user) return
 
-    const exportData = await DataExporter.exportData(user)
+    // Create export data structure
+    const exportData = {
+      version: "1.0.0",
+      exportDate: new Date().toISOString(),
+      user: {
+        ...user,
+        id: user.id,
+        createdAt: user.createdAt,
+      },
+      goalSets: transformedGoalSets,
+      tasks: transformedTasks,
+      completions: [], // Task completions are handled within tasks
+    }
+
     DataExporter.downloadJSON(exportData)
 
     toast({
@@ -100,47 +109,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     })
   }
 
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file || !user) return
-
-    setIsImporting(true)
-
-    try {
-      const result = await DataImporter.importFromJSON(file, user.id)
-
-      if (result.success) {
-        toast({
-          title: "Import successful",
-          description: `Imported ${result.imported?.goalSets} goal sets, ${result.imported?.tasks} tasks, and ${result.imported?.completions} completions.`,
-        })
-        // Refresh the page to show imported data
-        window.location.reload()
-      } else {
-        toast({
-          title: "Import failed",
-          description: result.message,
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Import failed",
-        description: "An error occurred while importing the file.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsImporting(false)
-      event.target.value = "" // Reset file input
-    }
-  }
-
   const handleClearAllData = () => {
     if (!confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
       return
     }
-
-    localStorage.clear()
     toast({
       title: "Data cleared",
       description: "All data has been cleared. You will be logged out.",
@@ -192,48 +164,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             </CardContent>
           </Card>
 
-          {/* Preferences */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5" />
-                Preferences
-              </CardTitle>
-              <CardDescription>Customize your app experience</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Compact Mode</Label>
-                  <p className="text-sm text-muted-foreground">Show more content in less space</p>
-                </div>
-                <Switch
-                  checked={formData.compactMode}
-                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, compactMode: checked }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Default View</Label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={formData.defaultView === "dashboard" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFormData((prev) => ({ ...prev, defaultView: "dashboard" }))}
-                  >
-                    Dashboard
-                  </Button>
-                  <Button
-                    variant={formData.defaultView === "analytics" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFormData((prev) => ({ ...prev, defaultView: "analytics" }))}
-                  >
-                    Analytics
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Data Management */}
           <Card>
             <CardHeader>
@@ -241,7 +171,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <Database className="h-5 w-5" />
                 Data Management
               </CardTitle>
-              <CardDescription>Export, import, or manage your data</CardDescription>
+              <CardDescription>Export or manage your data</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -256,23 +186,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       <Download className="h-4 w-4 mr-2" />
                       CSV
                     </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Import Data</Label>
-                  <div className="relative">
-                    <Input
-                      type="file"
-                      accept=".json"
-                      onChange={handleImport}
-                      disabled={isImporting}
-                      className="file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:bg-muted file:text-muted-foreground"
-                    />
-                    {isImporting && (
-                      <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-                        <div className="text-sm">Importing...</div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

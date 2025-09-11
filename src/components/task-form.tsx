@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
@@ -89,13 +88,11 @@ export function TaskForm({ onSubmit, onCancel, goalSets, initialData, isEditing 
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEditing ? "Edit Task" : "Create New Task"}</CardTitle>
-        <CardDescription>{isEditing ? "Update your task details" : "Add a new task to your goal set"}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-12 p-2">
+      <div className="text-sm text-muted-foreground">
+        {isEditing ? "Update your task details" : "Add a new task to your goal set"}
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">Task Title *</Label>
             <Input
@@ -181,7 +178,7 @@ export function TaskForm({ onSubmit, onCancel, goalSets, initialData, isEditing 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="scheduledDate">Scheduled Date & Time</Label>
+              <Label htmlFor="scheduledDate">Scheduled Date</Label>
               <Input
                 id="scheduledDate"
                 type="datetime-local"
@@ -298,7 +295,6 @@ export function TaskForm({ onSubmit, onCancel, goalSets, initialData, isEditing 
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

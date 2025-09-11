@@ -6,16 +6,19 @@ import { useGoalSets } from "@/hooks/use-goal-sets"
 import { useTasks } from "@/hooks/use-tasks"
 import { useAnalytics } from "@/hooks/use-analytics"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { GoalSetForm } from "@/components/goal-set-form"
-import { GoalSetCard } from "@/components/goal-set-card"
 import { TaskForm } from "@/components/task-form"
-import { TaskCard } from "@/components/task-card"
 import { AnalyticsCharts } from "@/components/analytics-charts"
-import { SmartSuggestions } from "@/components/smart-suggestions"
 import { SettingsDialog } from "@/components/settings-dialog"
-import { LogOut, Plus, Target, Calendar, BarChart3, Settings, TrendingUp } from "lucide-react"
+import { StatsCard } from "@/components/dashboard/stats-card"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { TabHeader } from "@/components/dashboard/tab-header"
+import { TaskList } from "@/components/dashboard/task-list"
+import { GoalSetGrid } from "@/components/dashboard/goal-set-grid"
+import { SectionHeader } from "@/components/dashboard/section-header"
+import { LogOut, Plus, Target, Calendar, BarChart3, Settings, TrendingUp, Award } from "lucide-react"
 import type { GoalSet, Task } from "@/lib/types"
 
 export function Dashboard() {
@@ -39,7 +42,6 @@ export function Dashboard() {
   const [selectedGoalSetId, setSelectedGoalSetId] = useState<string>("")
   const [showSettings, setShowSettings] = useState(false)
 
-  // Transform Convex data to match expected types
   const transformedGoalSets = goalSets.map(gs => ({
     ...gs,
     id: gs._id,
@@ -124,41 +126,11 @@ export function Dashboard() {
     return { total: goalSetTasks.length, completed: completedCount }
   }
 
-  if (showGoalSetForm || editingGoalSet) {
-    return (
-      <div className="min-h-screen bg-background p-4">
-        <GoalSetForm
-          onSubmit={editingGoalSet ? handleEditGoalSet : handleCreateGoalSet}
-          onCancel={handleCancelForms}
-          initialData={editingGoalSet || undefined}
-          isEditing={!!editingGoalSet}
-        />
-      </div>
-    )
-  }
-
-  if (showTaskForm || editingTask) {
-    return (
-      <div className="min-h-screen bg-background p-4">
-        <TaskForm
-          onSubmit={editingTask ? handleEditTask : handleCreateTask}
-          onCancel={handleCancelForms}
-          goalSets={activeGoalSets}
-          initialData={
-            editingTask
-              ? { ...editingTask, goalSetId: editingTask.goalSetId || selectedGoalSetId }
-              : { goalSetId: selectedGoalSetId }
-          }
-          isEditing={!!editingTask}
-        />
-      </div>
-    )
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="px-16 min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-700/50 bg-slate-900/80 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80">
+      <header className="border  fixed top-0 left-0 right-0 z-10 bg-opacity-95  ease-in-out mt-5 mx-36 rounded-full shadow-md shadow-purple-200/20 hover:shadow-2xl hover:shadow-blue-300/30 transition-all duration-300 border-slate-700/50 bg-slate-950 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-lg border border-purple-500/30">
@@ -193,254 +165,226 @@ export function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-6">
+      <main className="container mx-auto px-4 py-8 ">
+        <div className="mt-24 grid gap-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-purple-600/10">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-purple-100">Active Goals</CardTitle>
-                <Target className="h-4 w-4 text-purple-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-50">{activeGoalSets.length}</div>
-                <p className="text-xs text-purple-200">
-                  {activeGoalSets.length === 0 ? "No goals yet" : `${goalSets.length - activeGoalSets.length} paused`}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-cyan-600/10">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-cyan-100">Tasks Today</CardTitle>
-                <Calendar className="h-4 w-4 text-cyan-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-cyan-50">{todaysTasks.length}</div>
-                <p className="text-xs text-cyan-200">{todaysTasks.filter((t) => t.isCompleted).length} completed</p>
-              </CardContent>
-            </Card>
-            <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-emerald-600/10">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-emerald-100">Completion Rate</CardTitle>
-                <BarChart3 className="h-4 w-4 text-emerald-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-emerald-50">{completionRate}%</div>
-                <p className="text-xs text-emerald-200">
-                  {completedTasks.length} of {totalTasks} tasks
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-amber-600/10">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-amber-100">Productivity Score</CardTitle>
-                <TrendingUp className="h-4 w-4 text-amber-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-amber-50">{analytics.productivityScore}</div>
-                <p className="text-xs text-amber-200">{analytics.streakDays} day streak</p>
-              </CardContent>
-            </Card>
+          <div className="flex flex-col md:flex-row gap-12 items-center justify-center">
+            <StatsCard
+              title="Active Goals"
+              value={activeGoalSets.length}
+              description={activeGoalSets.length === 0 ? "No goals yet" : `${goalSets.length - activeGoalSets.length} paused`}
+              icon={Target}
+              gradientFrom="from-purple-500/5"
+              gradientTo="to-purple-600/10"
+              borderColor="border-purple-500/20"
+              textColor="text-purple-50"
+              iconColor="text-purple-400"
+              descriptionColor="text-purple-200"
+            />
+            <StatsCard
+              title="Tasks Today"
+              value={todaysTasks.length}
+              description={`${todaysTasks.filter((t) => t.isCompleted).length} completed`}
+              icon={Calendar}
+              gradientFrom="from-cyan-500/5"
+              gradientTo="to-cyan-600/10"
+              borderColor="border-cyan-500/20"
+              textColor="text-cyan-50"
+              iconColor="text-cyan-400"
+              descriptionColor="text-cyan-200"
+            />
+            <StatsCard
+              title="Completion Rate"
+              value={`${completionRate}%`}
+              description={`${completedTasks.length} of ${totalTasks} tasks`}
+              icon={BarChart3}
+              gradientFrom="from-emerald-500/5"
+              gradientTo="to-emerald-600/10"
+              borderColor="border-emerald-500/20"
+              textColor="text-emerald-50"
+              iconColor="text-emerald-400"
+              descriptionColor="text-emerald-200"
+            />
+            <StatsCard
+              title="Current Streak"
+              value={analytics.streakDays}
+              description={`${analytics.streakDays} day streak`}
+              icon={Award}
+              gradientFrom="from-amber-500/5"
+              gradientTo="to-amber-600/10"
+              borderColor="border-amber-500/20"
+              textColor="text-amber-50"
+              iconColor="text-amber-400"
+              descriptionColor="text-amber-200"
+            />
           </div>
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <TabsList className="bg-slate-800/50 border border-slate-700/50">
-                <TabsTrigger
-                  value="overview"
-                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-                >
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger
-                  value="analytics"
-                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-                >
-                  Analytics
-                </TabsTrigger>
-                <TabsTrigger value="tasks" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-                  Tasks
-                </TabsTrigger>
-                <TabsTrigger value="goals" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-                  Goal Sets
-                </TabsTrigger>
-              </TabsList>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setShowTaskForm(true)}
-                  variant="outline"
-                  className="gap-2 border-slate-600 hover:bg-slate-700 text-slate-300"
-                >
-                  <Plus className="h-4 w-4" />
-                  New Task
-                </Button>
-                <Button
-                  onClick={() => setShowGoalSetForm(true)}
-                  className="gap-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white border-0"
-                >
-                  <Plus className="h-4 w-4" />
-                  New Goal Set
-                </Button>
-              </div>
-            </div>
+            <TabHeader
+              tabs={[
+                { value: "overview", label: "Overview" },
+                { value: "analytics", label: "Analytics" },
+                { value: "tasks", label: "Tasks" },
+                { value: "goals", label: "Goal Sets" },
+              ]}
+              
+              activeTab="overview"
+              onTabChange={() => {}}
+              actions={[
+                {
+                  label: "New Task",
+                  onClick: () => setShowTaskForm(true),
+                  variant: "outline",
+                  icon: Plus,
+                },
+                {
+                  label: "New Goal Set",
+                  onClick: () => setShowGoalSetForm(true),
+                  variant: "default",
+                  icon: Plus,
+                },
+              ]}
+            />
 
             <TabsContent value="overview" className="space-y-6">
-              <SmartSuggestions />
-
               {/* Today's Tasks */}
               {todaysTasks.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Today's Tasks</h3>
-                  <div className="grid gap-3">
-                    {todaysTasks.map((task) => {
-                      const transformedTask = transformedTasks.find(t => t._id === task._id)
-                      const goalSet = transformedGoalSets.find((gs) => gs.id === task.goalSetId)
-                      return (
-                        <TaskCard
-                          key={task._id}
-                          task={transformedTask!}
-                          goalSet={goalSet}
-                          onEdit={handleEditTaskClick}
-                          onDelete={deleteTask}
-                          onComplete={completeTask}
-                          onUncomplete={uncompleteTask}
-                        />
-                      )
-                    })}
-                  </div>
+                  <SectionHeader title="Today's Tasks" />
+                  <TaskList
+                    tasks={todaysTasks.map(task => transformedTasks.find(t => t._id === task._id)!).filter(Boolean)}
+                    goalSets={transformedGoalSets}
+                    onEdit={handleEditTaskClick}
+                    onDelete={deleteTask}
+                    onComplete={completeTask}
+                    onUncomplete={uncompleteTask}
+                  />
                 </div>
               )}
 
               {/* Recent Goal Sets */}
               {goalSets.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Your Goal Sets</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {transformedGoalSets.slice(0, 6).map((goalSet) => {
-                      const stats = getGoalSetTaskStats(goalSet.id)
-                      return (
-                        <GoalSetCard
-                          key={goalSet.id}
-                          goalSet={goalSet}
-                          taskCount={stats.total}
-                          completedTaskCount={stats.completed}
-                          onEdit={handleEditGoalSetClick}
-                          onDelete={deleteGoalSet}
-                          onToggleActive={toggleGoalSetActive}
-                          onAddTask={handleAddTaskToGoalSet}
-                        />
-                      )
-                    })}
-                  </div>
+                  <SectionHeader title="Your Goal Sets" />
+                  <GoalSetGrid
+                    goalSets={transformedGoalSets}
+                    getGoalSetTaskStats={getGoalSetTaskStats}
+                    onEdit={handleEditGoalSetClick}
+                    onDelete={deleteGoalSet}
+                    onToggleActive={toggleGoalSetActive}
+                    onAddTask={handleAddTaskToGoalSet}
+                    maxItems={6}
+                  />
                 </div>
               )}
 
               {/* Empty State */}
               {goalSets.length === 0 && (
-                <Card className="text-center py-12">
-                  <CardHeader>
-                    <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                      <Target className="h-6 w-6 text-primary" />
-                    </div>
-                    <CardTitle>Ready to Start Your Journey?</CardTitle>
-                    <CardDescription className="max-w-md mx-auto">
-                      Create your first goal set to begin tracking your progress and achieving your dreams.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="lg" className="gap-2" onClick={() => setShowGoalSetForm(true)}>
-                      <Plus className="h-4 w-4" />
-                      Create Your First Goal Set
-                    </Button>
-                  </CardContent>
-                </Card>
+                <EmptyState
+                  icon={Target}
+                  title="Ready to Start Your Journey?"
+                  description="Create your first goal set to begin tracking your progress and achieving your dreams."
+                  buttonText="Create Your First Goal Set"
+                  onButtonClick={() => setShowGoalSetForm(true)}
+                  buttonIcon={Plus}
+                />
               )}
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Analytics & Insights</h3>
-                  <p className="text-sm text-muted-foreground">Track your progress and productivity patterns</p>
-                </div>
-              </div>
+              <SectionHeader
+                title="Analytics & Insights"
+                description="Track your progress and productivity patterns"
+              />
               <AnalyticsCharts analytics={analytics} />
             </TabsContent>
 
             <TabsContent value="tasks" className="space-y-4">
-              {transformedTasks.length > 0 ? (
-                <div className="grid gap-3">
-                  {transformedTasks.map((task) => {
-                    const goalSet = transformedGoalSets.find((gs) => gs.id === task.goalSetId)
-                    return (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        goalSet={goalSet}
-                        onEdit={handleEditTaskClick}
-                        onDelete={deleteTask}
-                        onComplete={completeTask}
-                        onUncomplete={uncompleteTask}
-                      />
-                    )
-                  })}
-                </div>
-              ) : (
-                <Card className="text-center py-12">
-                  <CardHeader>
-                    <CardTitle>No Tasks Yet</CardTitle>
-                    <CardDescription>Create your first task to start tracking your progress.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="lg" className="gap-2" onClick={() => setShowTaskForm(true)}>
-                      <Plus className="h-4 w-4" />
-                      Create Your First Task
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+              <TaskList
+                tasks={transformedTasks}
+                goalSets={transformedGoalSets}
+                onEdit={handleEditTaskClick}
+                onDelete={deleteTask}
+                onComplete={completeTask}
+                onUncomplete={uncompleteTask}
+                emptyState={{
+                  title: "No Tasks Yet",
+                  description: "Create your first task to start tracking your progress.",
+                  buttonText: "Create Your First Task",
+                  onButtonClick: () => setShowTaskForm(true),
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="goals" className="space-y-4">
-              {transformedGoalSets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {transformedGoalSets.map((goalSet) => {
-                    const stats = getGoalSetTaskStats(goalSet.id)
-                    return (
-                      <GoalSetCard
-                        key={goalSet.id}
-                        goalSet={goalSet}
-                        taskCount={stats.total}
-                        completedTaskCount={stats.completed}
-                        onEdit={handleEditGoalSetClick}
-                        onDelete={deleteGoalSet}
-                        onToggleActive={toggleGoalSetActive}
-                        onAddTask={handleAddTaskToGoalSet}
-                      />
-                    )
-                  })}
-                </div>
-              ) : (
-                <Card className="text-center py-12">
-                  <CardHeader>
-                    <CardTitle>No Goal Sets Yet</CardTitle>
-                    <CardDescription>Create your first goal set to organize your objectives.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="lg" className="gap-2" onClick={() => setShowGoalSetForm(true)}>
-                      <Plus className="h-4 w-4" />
-                      Create Your First Goal Set
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+              <GoalSetGrid
+                goalSets={transformedGoalSets}
+                getGoalSetTaskStats={getGoalSetTaskStats}
+                onEdit={handleEditGoalSetClick}
+                onDelete={deleteGoalSet}
+                onToggleActive={toggleGoalSetActive}
+                onAddTask={handleAddTaskToGoalSet}
+                emptyState={{
+                  title: "No Goal Sets Yet",
+                  description: "Create your first goal set to organize your objectives.",
+                  buttonText: "Create Your First Goal Set",
+                  onButtonClick: () => setShowGoalSetForm(true),
+                }}
+              />
             </TabsContent>
           </Tabs>
         </div>
       </main>
 
       <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
+
+      {/* Goal Set Form Dialog */}
+      <Dialog open={showGoalSetForm || !!editingGoalSet} onOpenChange={(open) => {
+        if (!open) {
+          handleCancelForms()
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingGoalSet ? "Edit Goal Set" : "Create New Goal Set"}
+            </DialogTitle>
+          </DialogHeader>
+          <GoalSetForm
+            onSubmit={editingGoalSet ? handleEditGoalSet : handleCreateGoalSet}
+            onCancel={handleCancelForms}
+            initialData={editingGoalSet || undefined}
+            isEditing={!!editingGoalSet}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Task Form Dialog */}
+      <Dialog open={showTaskForm || !!editingTask} onOpenChange={(open) => {
+        if (!open) {
+          handleCancelForms()
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingTask ? "Edit Task" : "Create New Task"}
+            </DialogTitle>
+          </DialogHeader>
+          <TaskForm
+            onSubmit={editingTask ? handleEditTask : handleCreateTask}
+            onCancel={handleCancelForms}
+            goalSets={activeGoalSets}
+            initialData={
+              editingTask
+                ? { ...editingTask, goalSetId: editingTask.goalSetId || selectedGoalSetId }
+                : { goalSetId: selectedGoalSetId }
+            }
+            isEditing={!!editingTask}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

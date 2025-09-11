@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { GoalSet } from "@/lib/types"
 
@@ -57,22 +56,18 @@ export function GoalSetForm({ onSubmit, onCancel, initialData, isEditing = false
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEditing ? "Edit Goal Set" : "Create New Goal Set"}</CardTitle>
-        <CardDescription>
-          {isEditing ? "Update your goal set details" : "Define a new goal set to organize your objectives"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-10">
+      <div className="text-sm text-muted-foreground">
+        {isEditing ? "Update your goal set details" : "Define a new goal set to organize your objectives"}
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Goal Set Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., Health & Fitness, Career Growth, Learning"
+              placeholder="e.g., DSA, Web-dev, DataScience, Health & Fitness etc"
               required
             />
           </div>
@@ -98,7 +93,7 @@ export function GoalSetForm({ onSubmit, onCancel, initialData, isEditing = false
                     type="button"
                     onClick={() => setFormData((prev) => ({ ...prev, color: color.value }))}
                     className={`
-                      h-10 rounded-md border-2 transition-all
+                      w-10 h-10 rounded-full border-2 transition-all
                       ${
                         formData.color === color.value
                           ? "border-foreground scale-110"
@@ -163,7 +158,6 @@ export function GoalSetForm({ onSubmit, onCancel, initialData, isEditing = false
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

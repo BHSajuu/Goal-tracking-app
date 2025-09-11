@@ -1,6 +1,6 @@
 # Goal Tracker - Advanced Goal Tracking & Analytics Platform
 
-A comprehensive goal tracking application built with Next.js, featuring smart analytics, task scheduling, and productivity insights.
+A comprehensive goal tracking application built with Next.js, featuring analytics, task scheduling, and productivity insights.
 
 ## Features
 
@@ -18,16 +18,15 @@ A comprehensive goal tracking application built with Next.js, featuring smart an
 - **Tagging System**: Flexible task categorization with custom tags
 
 ### 📊 Analytics & Insights
-- **Productivity Score**: AI-calculated productivity metrics (0-100)
+- **Productivity Score**: Calculated productivity metrics (0-100)
 - **Streak Tracking**: Daily completion streak monitoring
 - **Weekly Progress**: Visual charts showing 7-day completion trends
 - **Goal Set Analytics**: Individual goal set performance metrics
 - **Completion Rates**: Overall and goal-specific completion statistics
 
-### 🤖 Smart Features
-- **AI Suggestions**: Intelligent recommendations for task scheduling and productivity
-- **Auto-scheduling**: Automatic task distribution across available time slots
-- **Productivity Insights**: Pattern recognition and improvement suggestions
+### 📈 Productivity Features
+- **Task Scheduling**: Date and time-based task scheduling
+- **Progress Tracking**: Real-time completion rates and visual progress bars
 - **Overdue Detection**: Automatic identification of overdue tasks
 
 ### 💾 Data Management

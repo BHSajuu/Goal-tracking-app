@@ -9,12 +9,6 @@ export interface ExportData {
 }
 
 export class DataExporter {
-  static async exportData(user: User): Promise<ExportData> {
-    // This will be called from a component that has access to Convex hooks
-    // For now, return a placeholder - the actual implementation will be in the component
-    throw new Error("DataExporter.exportData should be called from a React component with Convex hooks")
-  }
-
   static downloadJSON(data: ExportData, filename?: string) {
     const jsonString = JSON.stringify(data, null, 2)
     const blob = new Blob([jsonString], { type: "application/json" })

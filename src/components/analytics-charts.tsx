@@ -1,13 +1,11 @@
 "use client"
 
 
-
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
-import { TrendingUp, Target, Clock, Zap, Calendar, Award } from "lucide-react"
+import { TrendingUp, Target,  Zap, Calendar, } from "lucide-react"
 import { Analytics } from "../lib/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Progress } from "./ui/progress"
-import { Badge } from "./ui/badge"
 
 interface AnalyticsChartsProps {
   analytics: Analytics
@@ -17,30 +15,20 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
   const {
     completionRate,
     streakDays,
-    totalTasksCompleted,
     averageCompletionTime,
-    productivityScore,
     weeklyProgress,
     goalSetProgress,
   } = analytics
 
   const chartColors = {
-    primary: "#8B5CF6", // Purple - primary brand color
-    secondary: "#06B6D4", // Cyan - secondary accent
-    accent: "#10B981", // Emerald - success/completion
-    warning: "#F59E0B", // Amber - warnings/attention
-    danger: "#EF4444", // Red - errors/urgent
-    muted: "#6B7280", // Gray - muted elements
+    primary: "#8B5CF6", 
+    secondary: "#06B6D4", 
+    accent: "#10B981", 
+    warning: "#F59E0B",
+    danger: "#EF4444", 
+    muted: "#6B7280", 
   }
 
-  const getProductivityLevel = (score: number) => {
-    if (score >= 80) return { level: "Excellent", color: "bg-emerald-500", variant: "default" as const }
-    if (score >= 60) return { level: "Good", color: "bg-cyan-500", variant: "default" as const }
-    if (score >= 40) return { level: "Fair", color: "bg-amber-500", variant: "secondary" as const }
-    return { level: "Needs Work", color: "bg-red-500", variant: "destructive" as const }
-  }
-
-  const productivityLevel = getProductivityLevel(productivityScore)
 
   const pieData = goalSetProgress
     .filter((gp) => gp.totalTasks > 0)
@@ -59,60 +47,7 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
 
   return (
     <div className="grid gap-6">
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-purple-600/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-100">Productivity Score</CardTitle>
-            <Zap className="h-4 w-4 text-purple-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-50">{productivityScore}</div>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant={productivityLevel.variant} className="bg-purple-600 text-purple-50">
-                {productivityLevel.level}
-              </Badge>
-            </div>
-            <Progress value={productivityScore} className="mt-2 bg-purple-900/30" />
-          </CardContent>
-        </Card>
-
-        <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-cyan-600/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-cyan-100">Current Streak</CardTitle>
-            <Award className="h-4 w-4 text-cyan-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-cyan-50">{streakDays}</div>
-            <p className="text-xs text-cyan-200">{streakDays === 1 ? "day" : "days"} in a row</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-emerald-600/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-100">Completion Rate</CardTitle>
-            <Target className="h-4 w-4 text-emerald-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-50">{completionRate}%</div>
-            <p className="text-xs text-emerald-200">{totalTasksCompleted} tasks completed</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-amber-600/10">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-amber-100">Avg. Time</CardTitle>
-            <Clock className="h-4 w-4 text-amber-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-50">
-              {averageCompletionTime > 0 ? `${averageCompletionTime}m` : "N/A"}
-            </div>
-            <p className="text-xs text-amber-200">per task</p>
-          </CardContent>
-        </Card>
-      </div>
-
+      
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Weekly Progress Chart */}
