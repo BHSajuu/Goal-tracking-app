@@ -16,6 +16,8 @@ interface StatsCardProps {
   descriptionColor: string
 }
 
+
+
 export function StatsCard({
   title,
   value,
@@ -37,7 +39,7 @@ export function StatsCard({
       <CardContent>
         <div className={`text-center text-2xl font-bold ${textColor}`}>{value}</div>
         {description && (
-          <p className={`text-center text-xs ${descriptionColor}`}>{value === 1 ? "day" : "days" } in a row</p>
+          <p className={`text-center text-xs ${descriptionColor}`}>{title === "Current Streak"? `${value === 1 ? "day" : "days"} in a row` : description} </p>
         )}
       </CardContent>
     </Card>

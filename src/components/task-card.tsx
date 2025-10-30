@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuPortal, // 1. Import DropdownMenuPortal
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -71,16 +72,20 @@ export function TaskCard({ task, goalSet, onEdit, onDelete, onComplete, onUncomp
 
   return (
     <Card
-      className={`transition-all hover:shadow-md ${task.isCompleted ? "opacity-60" : ""} ${isOverdue ? "border-destructive/50" : ""}`}
+      className={`rounded-4xl px-5 mx-10 my-4 transition-all hover:shadow-lg hover:shadow-blue-300/30 duration-300 ${task.isCompleted ? "opacity-60" : ""} ${isOverdue ? "border-destructive/50" : ""}`}
     >
-      <CardHeader className="pb-3">
+      <CardHeader>
         <div className="flex items-start gap-3">
-          <Checkbox checked={task.isCompleted} onCheckedChange={handleToggleComplete} className="mt-1" />
-          <div className="flex-1 min-w-0">
+          <Checkbox
+            checked={task.isCompleted}
+            onCheckedChange={handleToggleComplete}
+            className="w-8 h-8 border-2 border-gray-300 rounded-full"
+          />
+          <div className="pl-3 flex-1 min-w-0">
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
                 <CardTitle
-                  className={`text-lg leading-tight ${task.isCompleted ? "line-through text-muted-foreground" : ""}`}
+                  className={`pt-1 text-lg leading-tight ${task.isCompleted ? "line-through text-muted-foreground" : ""}`}
                 >
                   {task.title}
                 </CardTitle>
@@ -94,41 +99,47 @@ export function TaskCard({ task, goalSet, onEdit, onDelete, onComplete, onUncomp
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(task)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {isDeleting ? "Confirm Delete" : "Delete"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+                {/* 2. Wrap DropdownMenuContent with DropdownMenuPortal */}
+                <DropdownMenuPortal>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(task)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {isDeleting ? "Confirm Delete" : "Delete"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenuPortal>
               </DropdownMenu>
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pl-20 pt-0">
         <div className="space-y-3">
           {/* Goal Set and Priority */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-8">
               {goalSet && (
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: goalSet.color }} />
-                  <span className="text-xs text-muted-foreground">{goalSet.name}</span>
+                  <span className=" text-muted-foreground">{goalSet.name}</span>
                 </div>
               )}
-              <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                {task.priority}
-              </Badge>
-              {task.recurrence && (
-                <Badge variant="outline" className="text-xs">
-                  <Repeat className="h-3 w-3 mr-1" />
-                  {task.recurrence.type}
-                </Badge>
+              {task.estimatedDuration && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {task.estimatedDuration}m
+                </div>
+              )}
+              {task.scheduledDate && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {formatDateTime(task.scheduledDate)}
+                </div>
               )}
             </div>
             {isOverdue && (
@@ -138,41 +149,35 @@ export function TaskCard({ task, goalSet, onEdit, onDelete, onComplete, onUncomp
             )}
           </div>
 
-          {/* Scheduling and Duration */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {task.scheduledDate && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {formatDateTime(task.scheduledDate)}
+          <div className="flex items-center gap-10 text-sm text-muted-foreground">
+            <Badge variant={getPriorityColor(task.priority)} className="text-xs">
+              {task.priority}
+            </Badge>
+            {task.recurrence && (
+              <Badge variant="outline" className="text-xs">
+                <Repeat className="h-3 w-3 mr-1" />
+                {task.recurrence.type}
+              </Badge>
+            )}
+
+            {task.tags.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <Tag className="h-3 w-3 text-muted-foreground" />
+                {task.tags.map((tag, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
               </div>
             )}
-            {task.estimatedDuration && (
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {task.estimatedDuration}m
+
+            {task.isCompleted && task.completedAt && (
+              <div className="text-xs text-muted-foreground">
+                Completed {formatDateTime(task.completedAt)}
+                {task.actualDuration && ` • Took ${task.actualDuration}m`}
               </div>
             )}
           </div>
-
-          {/* Tags */}
-          {task.tags.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap">
-              <Tag className="h-3 w-3 text-muted-foreground" />
-              {task.tags.map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {/* Completion Info */}
-          {task.isCompleted && task.completedAt && (
-            <div className="text-xs text-muted-foreground">
-              Completed {formatDateTime(task.completedAt)}
-              {task.actualDuration && ` • Took ${task.actualDuration}m`}
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

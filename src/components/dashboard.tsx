@@ -18,8 +18,9 @@ import { TabHeader } from "@/components/dashboard/tab-header"
 import { TaskList } from "@/components/dashboard/task-list"
 import { GoalSetGrid } from "@/components/dashboard/goal-set-grid"
 import { SectionHeader } from "@/components/dashboard/section-header"
-import { LogOut, Plus, Target, Calendar, BarChart3, Settings, TrendingUp, Award } from "lucide-react"
+import { LogOut, Plus, Target, Calendar, BarChart3, Settings, Award } from "lucide-react"
 import type { GoalSet, Task } from "@/lib/types"
+import buildStatsCardStore from "@/store/StatsCard-store"
 
 export function Dashboard() {
   const { user, logout } = useAuth()
@@ -125,6 +126,18 @@ export function Dashboard() {
     const completedCount = goalSetTasks.filter((t) => t.isCompleted).length
     return { total: goalSetTasks.length, completed: completedCount }
   }
+  
+  
+  const stats = buildStatsCardStore({
+  activeGoalSets,
+  todaysTasks,
+  completionRate,
+  completedTasks,
+  totalTasks,
+  analytics,
+  goalSets,
+  icons: { Target, Calendar, BarChart3, Award },
+});
 
 
   return (
@@ -169,54 +182,21 @@ export function Dashboard() {
         <div className="mt-24 grid gap-6">
           {/* Quick Stats */}
           <div className="flex flex-col md:flex-row gap-12 items-center justify-center">
-            <StatsCard
-              title="Active Goals"
-              value={activeGoalSets.length}
-              description={activeGoalSets.length === 0 ? "No goals yet" : `${goalSets.length - activeGoalSets.length} paused`}
-              icon={Target}
-              gradientFrom="from-purple-500/5"
-              gradientTo="to-purple-600/10"
-              borderColor="border-purple-500/20"
-              textColor="text-purple-50"
-              iconColor="text-purple-400"
-              descriptionColor="text-purple-200"
-            />
-            <StatsCard
-              title="Tasks Today"
-              value={todaysTasks.length}
-              description={`${todaysTasks.filter((t) => t.isCompleted).length} completed`}
-              icon={Calendar}
-              gradientFrom="from-cyan-500/5"
-              gradientTo="to-cyan-600/10"
-              borderColor="border-cyan-500/20"
-              textColor="text-cyan-50"
-              iconColor="text-cyan-400"
-              descriptionColor="text-cyan-200"
-            />
-            <StatsCard
-              title="Completion Rate"
-              value={`${completionRate}%`}
-              description={`${completedTasks.length} of ${totalTasks} tasks`}
-              icon={BarChart3}
-              gradientFrom="from-emerald-500/5"
-              gradientTo="to-emerald-600/10"
-              borderColor="border-emerald-500/20"
-              textColor="text-emerald-50"
-              iconColor="text-emerald-400"
-              descriptionColor="text-emerald-200"
-            />
-            <StatsCard
-              title="Current Streak"
-              value={analytics.streakDays}
-              description={`${analytics.streakDays} day streak`}
-              icon={Award}
-              gradientFrom="from-amber-500/5"
-              gradientTo="to-amber-600/10"
-              borderColor="border-amber-500/20"
-              textColor="text-amber-50"
-              iconColor="text-amber-400"
-              descriptionColor="text-amber-200"
-            />
+            {stats.map((s) => (
+              <StatsCard
+                key={s.title}
+                title={s.title}
+                value={s.value}
+                description={s.description}
+                icon={s.icon}
+                gradientFrom={s.gradientFrom}
+                gradientTo={s.gradientTo}
+                borderColor={s.borderColor}
+                textColor={s.textColor}
+                iconColor={s.iconColor}
+                descriptionColor={s.descriptionColor}
+              />
+            ))}
           </div>
 
           {/* Main Content Tabs */}

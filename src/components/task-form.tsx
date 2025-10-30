@@ -139,7 +139,7 @@ export function TaskForm({ onSubmit, onCancel, goalSets, initialData, isEditing 
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
               <Select
@@ -166,12 +166,13 @@ export function TaskForm({ onSubmit, onCancel, goalSets, initialData, isEditing 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (minutes)</Label>
+              <Label htmlFor="duration">Duration(minutes)</Label>
               <Input
                 id="duration"
                 type="number"
                 min="1"
                 value={formData.estimatedDuration}
+                className="w-[calc(100%-30px)]"
                 onChange={(e) => setFormData((prev) => ({ ...prev, estimatedDuration: e.target.value }))}
                 placeholder="30"
               />
@@ -181,8 +182,9 @@ export function TaskForm({ onSubmit, onCancel, goalSets, initialData, isEditing 
               <Label htmlFor="scheduledDate">Scheduled Date</Label>
               <Input
                 id="scheduledDate"
-                type="datetime-local"
+                type="date"
                 value={formData.scheduledDate}
+                className="w-[calc(100%-0px)] "
                 onChange={(e) => setFormData((prev) => ({ ...prev, scheduledDate: e.target.value }))}
               />
             </div>
