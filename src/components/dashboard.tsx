@@ -221,7 +221,7 @@ export function Dashboard() {
                 {
                   label: "New Goal Set",
                   onClick: () => setShowGoalSetForm(true),
-                  variant: "default",
+                  variant: "outline",
                   icon: Plus,
                 },
               ]}
